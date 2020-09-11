@@ -66,6 +66,16 @@ void SDDMMCoo(const std::string& op,
               int lhs_target,
               int rhs_target);
 
+template <int XPU, typename IdType, typename DType>
+void SDDMMSPMMCsr(const std::string& op,
+              const BcastOff& bcast,
+              const aten::CSRMatrix& csr,
+              NDArray lhs,
+              NDArray rhs,
+              NDArray out,
+              int lhs_target,
+              int rhs_target);
+
 }  // namespace aten
 }  // namespace dgl
 
