@@ -243,7 +243,7 @@ def _gsddmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
         out = F.squeeze(out, -1)
     return out
 def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
-    r""" Generalized Sampled-Dense-Dense Matrix Multiplication interface. It
+    r""" Combination of SDDMM and SpMM (will update below description). It
     takes the result of :attr:`op` on source node feature and destination node
     feature, leads to a feature on edge.
     .. math::
@@ -297,8 +297,7 @@ def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
     dtype = F.dtype(lhs) if use_lhs else F.dtype(rhs)
     lhs_shp = F.shape(lhs) if use_lhs else (0,)
     rhs_shp = F.shape(rhs) if use_rhs else (0,)
-    out_shp = (gidx.number_of_edges(0), ) +\
-        infer_broadcast_shape(op, lhs_shp[1:], rhs_shp[1:])
+    out_shp = F.shape(lhs) if use_lhs else (0,)
     out = F.zeros(out_shp, dtype, ctx)
     if gidx.number_of_edges(0) > 0:
         _CAPI_DGLKernelSDDMMSPMM(gidx, op,

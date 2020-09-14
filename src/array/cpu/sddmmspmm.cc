@@ -1,49 +1,80 @@
-#ifndef DGL_ARRAY_CPU_SDDMMSPMM_H_
-#define DGL_ARRAY_CPU_SDDMMSPMM_H_
+/*!
+ *  Copyright (c) 2020 by Contributors
+ * \file aten/cpu/sddmm.cc
+ * \brief SDDMM C APIs and definitions.
+ */
+#include "./sddmmspmm.h"
 #include <dgl/array.h>
-#include <dgl/bcast.h>
-#include "../selector.h"
-#include "sddmm.h"
 
 namespace dgl {
 namespace aten {
-namespace cpu {
-template <typename IdType, typename DType, typename Op,
-int LhsTarget = 0, int RhsTarget = 2>
-void SDDMMSPMMCsr(const BcastOff& bcast,
-const CSRMatrix& csr,
-              NDArray lhs, NDArray rhs, NDArray out) {
-const bool has_idx = !IsNullArray(csr.data);
-const IdType* indptr = csr.indptr.Ptr<IdType>();
-const IdType* indices = csr.indices.Ptr<IdType>();
-const IdType* edges = csr.data.Ptr<IdType>();
-const DType* X = lhs.Ptr<DType>();
-const DType* Y = rhs.Ptr<DType>();
-const int64_t dim = bcast.out_len,
-                lhs_dim = bcast.lhs_len,
-                rhs_dim = bcast.rhs_len,
-                reduce_size = bcast.reduce_size;
-  DType* O = out.Ptr<DType>();
-#pragma omp parallel for
-for (IdType rid = 0; rid < csr.num_rows; ++rid) {
-const IdType row_start = indptr[rid], row_end = indptr[rid + 1];
-for (IdType j = row_start; j < row_end; ++j) {
-const IdType cid = indices[j];
-const IdType eid = has_idx? edges[j] : j;
-      DType* out_off = O + eid * dim;
-for (int64_t k = 0; k < dim; ++k) {
-const int64_t lhs_add = bcast.use_bcast ? bcast.lhs_offset[k] : k;
-const int64_t rhs_add = bcast.use_bcast ? bcast.rhs_offset[k] : k;
-const DType* lhs_off = Op::use_lhs?
-          X + Selector<LhsTarget>::Call(rid, eid, cid) * lhs_dim + lhs_add * reduce_size : nullptr;
-const DType* rhs_off = Op::use_rhs?
-          Y + Selector<RhsTarget>::Call(rid, eid, cid) * rhs_dim + rhs_add * reduce_size : nullptr;
-        out_off[k] = Op::Call(lhs_off, rhs_off, reduce_size);
-      }
-    }
-  }
-}	
+
+#define SWITCH_RHS(rhs_target, RhsTarget, ...)                        \
+  do {                                                                \
+    if ((rhs_target) == 0) {                                          \
+      constexpr int RhsTarget = 0;                                    \
+      { __VA_ARGS__ }                                                 \
+    } else if ((rhs_target) == 1) {                                   \
+      constexpr int RhsTarget = 1;                                    \
+      { __VA_ARGS__ }                                                 \
+    } else if ((rhs_target) == 2) {                                   \
+      constexpr int RhsTarget = 2;                                    \
+      { __VA_ARGS__ }                                                 \
+    } else {                                                          \
+      LOG(INFO) << "Invalid rhs target: " << (rhs_target);            \
+    }                                                                 \
+  } while (0)
+
+#define SWITCH_TARGET(lhs_target, rhs_target, LhsTarget, RhsTarget, ...)\
+  do {                                                                  \
+    if ((lhs_target) == 0) {                                            \
+      constexpr int LhsTarget = 0;                                      \
+      SWITCH_RHS(rhs_target, RhsTarget, __VA_ARGS__);                   \
+    } else if ((lhs_target) == 1) {                                     \
+      constexpr int LhsTarget = 1;                                      \
+      SWITCH_RHS(rhs_target, RhsTarget, __VA_ARGS__);                   \
+    } else if ((lhs_target) == 2) {                                     \
+      constexpr int LhsTarget = 2;                                      \
+      SWITCH_RHS(rhs_target, RhsTarget, __VA_ARGS__);                   \
+    } else {                                                            \
+      LOG(INFO) << "Invalid lhs target: " << (lhs_target);              \
+    }                                                                   \
+  } while (0)
+
+
+/*! \brief Generalized SDDMM on Csr format. */
+template <int XPU, typename IdType, typename DType>
+void SDDMMSPMMCsr(const std::string& op,
+              const BcastOff& bcast,
+              const CSRMatrix& csr,
+              NDArray lhs,
+              NDArray rhs,
+              NDArray out,
+              int lhs_target,
+              int rhs_target) {
+  SWITCH_OP(op, Op, {
+    SWITCH_TARGET(lhs_target, rhs_target, LhsTarget, RhsTarget, {
+      cpu::SDDMMSPMMCsr<IdType, DType, Op, LhsTarget, RhsTarget>(bcast, csr, lhs, rhs, out);
+    });
+  });
 }
-}
-}
-#endif 
+
+template void SDDMMSPMMCsr<kDLCPU, int32_t, float>(
+    const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
+    NDArray lhs, NDArray rhs, NDArray out,
+    int lhs_target, int rhs_target);
+template void SDDMMSPMMCsr<kDLCPU, int64_t, float>(
+    const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
+    NDArray lhs, NDArray rhs, NDArray out,
+    int lhs_target, int rhs_target);
+template void SDDMMSPMMCsr<kDLCPU, int32_t, double>(
+    const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
+    NDArray lhs, NDArray rhs, NDArray out,
+    int lhs_target, int rhs_target);
+template void SDDMMSPMMCsr<kDLCPU, int64_t, double>(
+    const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
+    NDArray lhs, NDArray rhs, NDArray out,
+    int lhs_target, int rhs_target);
+
+}  // namespace aten
+}  // namespace dgl

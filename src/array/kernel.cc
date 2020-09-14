@@ -102,6 +102,7 @@ void SDDMM(const std::string& op,
            NDArray out,
            int lhs_target,
            int rhs_target) {
+
   SparseFormat format = graph->SelectFormat(0, coo_code);
   const auto &bcast = CalcBcastOff(op, lhs, rhs);
 
@@ -134,19 +135,18 @@ void SDDMMSPMM(const std::string& op,
   SparseFormat format = graph->SelectFormat(0, coo_code);
   const auto &bcast = CalcBcastOff(op, lhs, rhs);
 
-  ATEN_XPU_SWITCH_CUDA(graph->Context().device_type, XPU, "SDDMM", {
+  ATEN_XPU_SWITCH_CUDA(graph->Context().device_type, XPU, "SDDMMSPMM", {
     ATEN_ID_TYPE_SWITCH(graph->DataType(), IdType, {
       ATEN_FLOAT_TYPE_SWITCH(out->dtype, DType, "Feature data", {
         if (format == SparseFormat::kCSR) {
-          SDDMMCsr<XPU, IdType, DType>(
+          SDDMMSPMMCsr<XPU, IdType, DType>(
               op, bcast, graph->GetCSRMatrix(0),
               lhs, rhs, out, lhs_target, rhs_target);
-        } else if (format == SparseFormat::kCOO) {
-          SDDMMCoo<XPU, IdType, DType>(
-              op, bcast, graph->GetCOOMatrix(0),
-              lhs, rhs, out, lhs_target, rhs_target);
         } else {
-          LOG(FATAL) << "SDDMM only supports CSR and COO foramts";
+	  SDDMMSPMMCsr<XPU, IdType, DType>(
+              op, bcast, graph->GetCSRMatrix(0),
+              lhs, rhs, out, lhs_target, rhs_target);
+          //LOG(FATAL) << "SDDMMSPMM only supports CSR foramt";
         }
       });
     });
@@ -218,11 +218,11 @@ DGL_REGISTER_GLOBAL("sparse._CAPI_DGLKernelSDDMMSPMM")
     auto pair = graph->meta_graph()->FindEdge(0);  // only one etype in the graph.
     const dgl_type_t src_vtype = pair.first;
     const dgl_type_t dst_vtype = pair.second;
-    CheckShape(
-        {graph->NumVertices(src_vtype), graph->NumEdges(0), graph->NumVertices(dst_vtype)},
-        {lhs_target, rhs_target, 1},
-        {lhs, rhs, out},
-        {"U_data", "E_data", "V_data"});
+    //CheckShape(
+    //    {graph->NumVertices(src_vtype), graph->NumEdges(0), graph->NumVertices(dst_vtype)},
+    //    {lhs_target, rhs_target, 1},
+    //    {lhs, rhs, out},
+    //    {"U_data", "E_data", "V_data"});
     SDDMMSPMM(op, graph.sptr(), lhs, rhs, out, lhs_target, rhs_target);
   });
 

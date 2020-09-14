@@ -1,8 +1,8 @@
 import torch as th
 from ...base import is_all, ALL
-from ...sparse import _gspmm, _gsddmm
+from ...sparse import _gspmm, _gsddmm, _gsddmmspmm
 
-__all__ = ['gspmm', 'gsddmm', 'edge_softmax']
+__all__ = ['gspmm', 'gsddmm', 'gsddmmspmm', 'edge_softmax']
 
 
 def _reduce_grad(grad, shape):
@@ -238,6 +238,8 @@ def gspmm(gidx, op, reduce_op, lhs_data, rhs_data):
 def gsddmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
     return GSDDMM.apply(gidx, op, lhs_data, rhs_data, lhs_target, rhs_target)
 
+def gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
+    return _gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target, rhs_target)
 
 def edge_softmax(gidx, logits, eids=ALL, norm_by='dst'):
     return EdgeSoftmax.apply(gidx, logits, eids, norm_by)
