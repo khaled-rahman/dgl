@@ -283,6 +283,7 @@ def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
     use_rhs = op != 'copy_lhs'
     # deal with scalar features.
     expand_lhs, expand_rhs = False, False
+    #print("Before:", lhs)
     if use_lhs:
         if F.ndim(lhs) == 1:
             lhs = F.unsqueeze(lhs, -1)
@@ -291,6 +292,7 @@ def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
         if F.ndim(rhs) == 1:
             rhs = F.unsqueeze(rhs, -1)
             expand_rhs = True
+    #print("After:", lhs)
     lhs_target = target_mapping[lhs_target]
     rhs_target = target_mapping[rhs_target]
     ctx = F.context(lhs) if use_lhs else F.context(rhs)
@@ -299,6 +301,7 @@ def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
     rhs_shp = F.shape(rhs) if use_rhs else (0,)
     out_shp = F.shape(lhs) if use_lhs else (0,)
     out = F.zeros(out_shp, dtype, ctx)
+    #print("lshape:", lhs_shp)
     if gidx.number_of_edges(0) > 0:
         _CAPI_DGLKernelSDDMMSPMM(gidx, op,
                              to_dgl_nd(lhs if use_lhs else None),
