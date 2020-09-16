@@ -1,8 +1,9 @@
 import dgl,torch
 from dgl.sparse import _gsddmmspmm, _gsddmm, _gspmm
-from dgl.data.citation_graph import load_cora
+from dgl.data.citation_graph import load_cora, load_citeseer, load_pubmed
 import sys, time
 import numpy as np
+from math import log
 
 def cacheflush():
 	print("Cache Refreshing...")
@@ -31,7 +32,7 @@ def batch_process(graph, batchsize=64):
 	return batches
 
 #combined sddmmspmm kernel
-def f2valgo(batchgraphs, embed, iterations = 5):
+def f2valgo(batchgraphs, embed, iterations = 1):
 	it = 0
 	#remember to add learning rate ...
 	totalktime = 0
@@ -42,10 +43,10 @@ def f2valgo(batchgraphs, embed, iterations = 5):
 		totalktime += end - start
 		it += 1
 	print("Total F2V Kernel Time:", totalktime, "seconds")
-	return embed
+	return output
 
 #gdl:sddmm+transformation+spmm kernel
-def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=5):
+def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -53,14 +54,15 @@ def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=5):
 		#SDDMM operation
 		X = _gsddmm(batchgraphs._graph, 'dot', embed, embed, lhs_target='u', rhs_target='v')
 		#non-linear transformation
-		Y = 1. / (1 + np.exp(-X))
+		Y = 1.0 - 1. / (1 + np.exp(-X))
+		#Y = 1.0 - Y
 		#SPMM operation
 		output = _gspmm(batchgraphsT._graph, "mul", "sum", embed, Y)[0]
 		end = time.time()
 		totalktime += end - start
 		it += 1
 	print("Total GDL Kernel Time:", totalktime, "seconds")
-	return embed
+	return output
 
 #manual result verification
 def gsddmmspmmkerneltest(graph, A):
@@ -97,6 +99,8 @@ def transposeGraph(graph):
 if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		data = load_cora(".")
+		#data = load_citeseer(".")
+		#data = load_pubmed(".")
 		graph = data[0]
 		tgraph = transposeGraph(graph)
 		N = len(graph.nodes())
@@ -105,15 +109,17 @@ if __name__ == "__main__":
 		#bgraphs = batch_process(graph)
 		#print(graph)
 		cacheflush()
-		#output = f2valgo(graph, embed)
-		#print("SDDMMSPMM Kernel:")
+		output = f2valgo(graph, embed)
+		print("SDDMMSPMM Kernel:")
 		#print(output)
-		#cacheflush()
+		cacheflush()
 		dgloutput = f2vusingdefault(graph, tgraph, embed)
 		print("DGL: SDDMMSPMM+Transformation+SPMM")
-		print(dgloutput)
+		#print(dgloutput)
 		#cacheflush()
 		#f2valgo(graph, embed)
+		out = gsddmmspmmkerneltest(graph, embed)
+		#print(out)
 	else:
 		print("Simple SDDMMSPMM Test:")
 		g = dgl.graph(([0, 0, 1, 1, 2, 3], [1, 2, 2, 4, 3, 4]))
@@ -131,7 +137,6 @@ if __name__ == "__main__":
 		print("DGL: SDDMMSPMM+Transformation+SPMM")
 		print(dgloutput)
 		#output = f2valgo(g, embed)
-		#print("Manual SPDDMM+SPMM:")
-		#print(embed)
-		#mout = gsddmmspmmkerneltest(g, embed)
-		#print(mout)
+		print("Manual SPDDMM+SPMM:")
+		mout = gsddmmspmmkerneltest(g, embed)
+		print(mout)
