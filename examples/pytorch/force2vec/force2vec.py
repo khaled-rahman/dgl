@@ -46,7 +46,7 @@ def f2valgo(batchgraphs, embed, iterations = 1):
 	return output
 
 #gdl:sddmm+transformation+spmm kernel
-def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1):
+def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1, lrate=1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -54,10 +54,30 @@ def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1):
 		#SDDMM operation
 		X = _gsddmm(batchgraphs._graph, 'dot', embed, embed, lhs_target='u', rhs_target='v')
 		#non-linear transformation
-		Y = 1.0 - 1. / (1 + np.exp(-X))
+		Y = lrate - lrate / (1 + torch.exp(-X))
 		#Y = 1.0 - Y
 		#SPMM operation
 		output = _gspmm(batchgraphsT._graph, "mul", "sum", embed, Y)[0]
+		end = time.time()
+		totalktime += end - start
+		it += 1
+	print("Total GDL Kernel Time:", totalktime, "seconds")
+	return output
+
+def f2vtdistribution(batchgraphs, batchgraphsT, embed, iterations=1, lrate = 1.0):
+	it = 0
+	totalktime = 0
+	while it < iterations:
+		start = time.time()
+		#SDDMM
+		D = _gsddmm(batchgraphs._graph, "sub", embed, embed, lhs_target='u', rhs_target='v')
+		d = _gsddmm(batchgraphs._graph, 'dot', D, D, lhs_target='e', rhs_target='e')
+		#NonlinearTransformation
+		E = - (2.0 * lrate) / (1.0 + d)
+		#SDDMM
+		E = _gsddmm(batchgraphs._graph, "mul", D, E, lhs_target='e', rhs_target='e')
+		#SPMM
+		output = _gspmm(batchgraphs._graph.reverse(), "copy_rhs", "sum", E, E)[0]
 		end = time.time()
 		totalktime += end - start
 		it += 1
