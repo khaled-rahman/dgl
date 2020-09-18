@@ -46,7 +46,7 @@ def f2valgo(batchgraphs, embed, iterations = 1):
 	return output
 
 #gdl:sddmm+transformation+spmm kernel
-def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1, lrate=1.0):
+def f2vusingdefault(batchgraphs, embed, iterations=1, lrate=1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -57,14 +57,14 @@ def f2vusingdefault(batchgraphs, batchgraphsT, embed, iterations=1, lrate=1.0):
 		Y = lrate - lrate / (1 + torch.exp(-X))
 		#Y = 1.0 - Y
 		#SPMM operation
-		output = _gspmm(batchgraphsT._graph, "mul", "sum", embed, Y)[0]
+		output = _gspmm(batchgraphs._graph.reverse(), "mul", "sum", embed, Y)[0]
 		end = time.time()
 		totalktime += end - start
 		it += 1
 	print("Total GDL Kernel Time:", totalktime, "seconds")
 	return output
 
-def f2vtdistribution(batchgraphs, batchgraphsT, embed, iterations=1, lrate = 1.0):
+def f2vtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -122,7 +122,6 @@ if __name__ == "__main__":
 		#data = load_citeseer(".")
 		#data = load_pubmed(".")
 		graph = data[0]
-		tgraph = transposeGraph(graph)
 		N = len(graph.nodes())
 		embed = torch.rand(N, 128)
 		#need to check batch processing ...
@@ -133,7 +132,7 @@ if __name__ == "__main__":
 		print("SDDMMSPMM Kernel:")
 		#print(output)
 		cacheflush()
-		dgloutput = f2vusingdefault(graph, tgraph, embed)
+		dgloutput = f2vusingdefault(graph, embed)
 		print("DGL: SDDMMSPMM+Transformation+SPMM")
 		#print(dgloutput)
 		#cacheflush()
@@ -153,7 +152,7 @@ if __name__ == "__main__":
 		print("SDDMMSPMM Kernel:")
 		print(output)
 		cacheflush()
-		dgloutput = f2vusingdefault(g, gt, embed) 
+		dgloutput = f2vusingdefault(g, embed) 
 		print("DGL: SDDMMSPMM+Transformation+SPMM")
 		print(dgloutput)
 		#output = f2valgo(g, embed)
