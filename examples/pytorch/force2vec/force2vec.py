@@ -4,6 +4,7 @@ from dgl.data.citation_graph import load_cora, load_citeseer, load_pubmed
 import sys, time
 import numpy as np
 from math import log
+import argparse
 
 def cacheflush():
 	print("Cache Refreshing...")
@@ -32,7 +33,7 @@ def batch_process(graph, batchsize=64):
 	return batches
 
 #combined sddmmspmm kernel
-def f2valgo(batchgraphs, embed, iterations = 1):
+def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 	it = 0
 	#remember to add learning rate ...
 	totalktime = 0
@@ -45,8 +46,21 @@ def f2valgo(batchgraphs, embed, iterations = 1):
 	print("Total F2V Kernel Time:", totalktime, "seconds")
 	return output
 
+def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
+	it = 0
+	totalktime = 0
+	while it < iterations:
+		start = time.time()
+		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v")
+		end = time.time()
+		totalktime += end - start
+		it += 1
+	print("Total F2V Kernel Time:", totalktime, "seconds")
+	return output
+	
+
 #gdl:sddmm+transformation+spmm kernel
-def f2vusingdefault(batchgraphs, embed, iterations=1, lrate=1.0):
+def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -64,7 +78,7 @@ def f2vusingdefault(batchgraphs, embed, iterations=1, lrate=1.0):
 	print("Total GDL Kernel Time:", totalktime, "seconds")
 	return output
 
-def f2vtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
+def dgltdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -116,46 +130,58 @@ def transposeGraph(graph):
 	tGraph = dgl.graph((dest, source))
 	return tGraph
 
-if __name__ == "__main__":
-	if len(sys.argv) > 1:
-		data = load_cora(".")
-		#data = load_citeseer(".")
-		#data = load_pubmed(".")
-		graph = data[0]
-		N = len(graph.nodes())
-		embed = torch.rand(N, 128)
-		#need to check batch processing ...
-		#bgraphs = batch_process(graph)
-		#print(graph)
-		cacheflush()
-		output = f2valgo(graph, embed)
-		print("SDDMMSPMM Kernel:")
-		#print(output)
-		cacheflush()
-		dgloutput = f2vusingdefault(graph, embed)
-		print("DGL: SDDMMSPMM+Transformation+SPMM")
-		#print(dgloutput)
-		#cacheflush()
-		#f2valgo(graph, embed)
-		out = gsddmmspmmkerneltest(graph, embed)
-		#print(out)
+def f2vfunctions(graph, embed, ftype, it, lr):
+	if ftype == 1:
+		f2voutput = f2vusingsigmoid(graph, embed, it, lr)
 	else:
-		print("Simple SDDMMSPMM Test:")
-		g = dgl.graph(([0, 0, 1, 1, 2, 3], [1, 2, 2, 4, 3, 4]))
-		gt = dgl.graph(([1, 2, 2, 4, 3, 4], [0, 0, 1, 1, 2, 3]))
-		#g = dgl.graph(([0, 1, 2, 3], [1, 2, 3, 4]))
-		embed = torch.rand(5, 5)
-		#print(embed)
-		#output = _gsddmmspmm(g._graph, "mul", embed, embed, "u", "v")
-		cacheflush()
-		output = f2valgo(g, embed)
-		print("SDDMMSPMM Kernel:")
-		print(output)
-		cacheflush()
-		dgloutput = f2vusingdefault(g, embed) 
-		print("DGL: SDDMMSPMM+Transformation+SPMM")
-		print(dgloutput)
-		#output = f2valgo(g, embed)
-		print("Manual SPDDMM+SPMM:")
-		mout = gsddmmspmmkerneltest(g, embed)
-		print(mout)
+		f2voutput = f2vusingtdistribution(graph, embed, it, lr)
+	return f2voutput
+
+
+def dglfunctions(graph, embed, ftype, it, lr):
+	if ftype == 1:
+		dgloutput = dglusingsigmoid(graph, embed, it, lr)
+	else:
+		dgloutput = dglusingtdistribution(graph, embed, it, lr)
+	return dgloutput
+
+if __name__ == "__main__":
+
+	parser = argparse.ArgumentParser(description='Demonstration of Force2Vec using fused kernels and DGL SDDMM and SpMM kernels', add_help=True)
+	parser.add_argument('-g', '--g', required=False, type=str, default="simple", help='Input graph name: cora, citeseer, pubmed')
+	parser.add_argument('-d', '--d', required=False, type=int, default=128, help='Embedding dimension, default:128')
+	parser.add_argument('-t', '--t', required=False, type=int, default=1, help='Similarity function type, default:1(sigmoid)')
+	parser.add_argument('-r', '--r', required=False, type=float, default=1.0, help='Learning rate, default:1.0')
+	parser.add_argument('-it', '--it', required=False, type=int, default=1, help='Iterations, default:1')
+
+	args = parser.parse_args()
+	graph = args.g
+	dim = args.d
+	ftype = args.t
+	lrate = args.r
+	it = args.it
+
+	if graph == "simple":
+		graph = dgl.graph(([0, 0, 1, 1, 2, 3], [1, 2, 2, 4, 3, 4]))
+	elif graph == "citeseer":
+		data = load_citeseer(".")
+		graph = data[0]
+	elif graph == "pubmed":
+		data = load_pubmed(".")
+		graph = data[0]
+	else:
+		data = load_cora(".")
+		graph = data[0]
+	N = len(graph.nodes())
+	embed = torch.rand(N, dim)
+	#need to check batch processing ...
+	#bgraphs = batch_process(graph)
+	#cacheflush()
+	f2voutput = f2vfunctions(graph, embed, ftype, it, lrate)
+	print("Fused SDDMM+SPMM Kernel:")
+	print(f2voutput)
+	dgloutput = dglfunctions(graph, embed, ftype, it, lrate)
+	print("DGL: SDDMMSPMM+Transformation+SPMM")
+	print(dgloutput)
+	#out = gsddmmspmmkerneltest(graph, embed)
+	#print(out)
