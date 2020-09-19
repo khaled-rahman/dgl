@@ -131,7 +131,7 @@ void SDDMMSPMM(const std::string& op,
            NDArray rhs,
            NDArray out,
            int lhs_target,
-           int rhs_target) {
+           int rhs_target, int ftype=1) {
   SparseFormat format = graph->SelectFormat(0, coo_code);
   const auto &bcast = CalcBcastOff(op, lhs, rhs);
 
@@ -141,11 +141,11 @@ void SDDMMSPMM(const std::string& op,
         if (format == SparseFormat::kCSR) {
           SDDMMSPMMCsr<XPU, IdType, DType>(
               op, bcast, graph->GetCSRMatrix(0),
-              lhs, rhs, out, lhs_target, rhs_target);
+              lhs, rhs, out, lhs_target, rhs_target, ftype);
         } else {
 	  SDDMMSPMMCsr<XPU, IdType, DType>(
               op, bcast, graph->GetCSRMatrix(0),
-              lhs, rhs, out, lhs_target, rhs_target);
+              lhs, rhs, out, lhs_target, rhs_target, ftype);
           //LOG(FATAL) << "SDDMMSPMM only supports CSR foramt";
         }
       });
@@ -212,6 +212,7 @@ DGL_REGISTER_GLOBAL("sparse._CAPI_DGLKernelSDDMMSPMM")
     NDArray out = args[4];
     int lhs_target = args[5];
     int rhs_target = args[6];
+    int ftype = args[7];
     CheckCtx(graph->Context(), {lhs, rhs, out}, {"lhs", "rhs", "out"});
     CheckContiguous({lhs, rhs, out}, {"lhs", "rhs", "out"});
     CHECK_EQ(graph->NumEdgeTypes(), 1);
@@ -223,7 +224,7 @@ DGL_REGISTER_GLOBAL("sparse._CAPI_DGLKernelSDDMMSPMM")
     //    {lhs_target, rhs_target, 1},
     //    {lhs, rhs, out},
     //    {"U_data", "E_data", "V_data"});
-    SDDMMSPMM(op, graph.sptr(), lhs, rhs, out, lhs_target, rhs_target);
+    SDDMMSPMM(op, graph.sptr(), lhs, rhs, out, lhs_target, rhs_target, ftype);
   });
 
 }  // namespace aten

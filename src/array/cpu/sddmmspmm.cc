@@ -51,10 +51,10 @@ void SDDMMSPMMCsr(const std::string& op,
               NDArray rhs,
               NDArray out,
               int lhs_target,
-              int rhs_target) {
+              int rhs_target, int ftype = 1) {
   SWITCH_OP(op, Op, {
     SWITCH_TARGET(lhs_target, rhs_target, LhsTarget, RhsTarget, {
-      cpu::SDDMMSPMMCsr<IdType, DType, Op, LhsTarget, RhsTarget>(bcast, csr, lhs, rhs, out);
+      cpu::SDDMMSPMMCsr<IdType, DType, Op, LhsTarget, RhsTarget>(bcast, csr, lhs, rhs, out, ftype);
     });
   });
 }
@@ -62,19 +62,19 @@ void SDDMMSPMMCsr(const std::string& op,
 template void SDDMMSPMMCsr<kDLCPU, int32_t, float>(
     const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
     NDArray lhs, NDArray rhs, NDArray out,
-    int lhs_target, int rhs_target);
+    int lhs_target, int rhs_target, int ftype);
 template void SDDMMSPMMCsr<kDLCPU, int64_t, float>(
     const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
     NDArray lhs, NDArray rhs, NDArray out,
-    int lhs_target, int rhs_target);
+    int lhs_target, int rhs_target, int ftype);
 template void SDDMMSPMMCsr<kDLCPU, int32_t, double>(
     const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
     NDArray lhs, NDArray rhs, NDArray out,
-    int lhs_target, int rhs_target);
+    int lhs_target, int rhs_target, int ftype);
 template void SDDMMSPMMCsr<kDLCPU, int64_t, double>(
     const std::string& op, const BcastOff& bcast, const CSRMatrix& csr,
     NDArray lhs, NDArray rhs, NDArray out,
-    int lhs_target, int rhs_target);
+    int lhs_target, int rhs_target, int ftype);
 
 }  // namespace aten
 }  // namespace dgl

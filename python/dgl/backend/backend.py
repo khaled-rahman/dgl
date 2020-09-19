@@ -1452,7 +1452,7 @@ def gsddmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
     """
     pass
 
-def gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
+def gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v', ftype=1):
     r""" Generalized Sampled-Dense-Dense Matrix Multiplication interface.
     It computes edge features by :attr:`op` lhs features and rhs features.
     .. math::

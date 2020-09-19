@@ -238,8 +238,8 @@ def gspmm(gidx, op, reduce_op, lhs_data, rhs_data):
 def gsddmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
     return GSDDMM.apply(gidx, op, lhs_data, rhs_data, lhs_target, rhs_target)
 
-def gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v'):
-    return _gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target, rhs_target)
+def gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target='u', rhs_target='v', ftype = 1):
+    return _gsddmmspmm(gidx, op, lhs_data, rhs_data, lhs_target, rhs_target, ftype)
 
 def edge_softmax(gidx, logits, eids=ALL, norm_by='dst'):
     return EdgeSoftmax.apply(gidx, logits, eids, norm_by)

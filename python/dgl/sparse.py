@@ -242,7 +242,7 @@ def _gsddmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
     if (expand_lhs or not use_lhs) and (expand_rhs or not use_rhs):
         out = F.squeeze(out, -1)
     return out
-def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
+def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v', ftype=1):
     r""" Combination of SDDMM and SpMM (will update below description). It
     takes the result of :attr:`op` on source node feature and destination node
     feature, leads to a feature on edge.
@@ -307,7 +307,7 @@ def _gsddmmspmm(gidx, op, lhs, rhs, lhs_target='u', rhs_target='v'):
                              to_dgl_nd(lhs if use_lhs else None),
                              to_dgl_nd(rhs if use_rhs else None),
                              to_dgl_nd_for_write(out),
-                             lhs_target, rhs_target)
+                             lhs_target, rhs_target, ftype)
     if (expand_lhs or not use_lhs) and (expand_rhs or not use_rhs):
         out = F.squeeze(out, -1)
     return out

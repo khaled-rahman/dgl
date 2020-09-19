@@ -74,7 +74,7 @@ void SDDMMSPMMCsr(const std::string& op,
               NDArray rhs,
               NDArray out,
               int lhs_target,
-              int rhs_target);
+              int rhs_target, int ftype=1);
 
 }  // namespace aten
 }  // namespace dgl

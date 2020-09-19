@@ -40,7 +40,7 @@ def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 	totalktime = 0
 	while it < iterations:
 		start = time.time()
-		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v")
+		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v", 1)
 		end = time.time()
 		totalktime += end - start
 		it += 1
@@ -52,7 +52,7 @@ def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
 	totalktime = 0
 	while it < iterations:
 		start = time.time()
-		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v")
+		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v", 2)
 		end = time.time()
 		totalktime += end - start
 		it += 1

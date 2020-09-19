@@ -104,7 +104,7 @@ template <typename IdType, typename DType, typename Op,
 int LhsTarget = 0, int RhsTarget = 2>
 void SDDMMSPMMCsr(const BcastOff& bcast,
 const CSRMatrix& csr,
-              NDArray lhs, NDArray rhs, NDArray out) {
+              NDArray lhs, NDArray rhs, NDArray out, int ftype = 1) {
 
 const IdType* indptr = csr.indptr.Ptr<IdType>();
 const IdType* indices = csr.indices.Ptr<IdType>();
@@ -114,8 +114,8 @@ const DType* Y = rhs.Ptr<DType>();
 const int64_t dim = bcast.out_len;
 // lhs_dim = bcast.lhs_len, rhs_dim = bcast.rhs_len, reduce_size = bcast.reduce_size;
 DType* O = out.Ptr<DType>();
-//SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
 /*
 #pragma omp parallel for
 for (IdType rid = 0; rid < csr.num_rows; ++rid) {
