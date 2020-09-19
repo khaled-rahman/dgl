@@ -25,10 +25,11 @@ def batch_process(graph, batchsize=64):
 		bedges = []
 		for i in range(b, min(b+batchsize, N)):
 			bedges += [[edges[0][row], edges[1][row]] for row in range(len(edges[0])) if edges[0][row]==i]
-		bedge_left = [i for [i,j] in bedges]
-		bedge_right = [j for [i,j] in bedges]
-		bgraph = dgl.heterograph(torch.tensor(bedge_left), torch.tensor(bedge_right))
+		bedge_left = [int(i) for [i,j] in bedges]
+		bedge_right = [int(j) for [i,j] in bedges]
+		bgraph = dgl.graph((bedge_left,bedge_right))
 		batches.append([bgraph, b , min(b+batchsize, N)])
+		#batches.append(bgraph)
 		b += batchsize
 	return batches
 
@@ -40,12 +41,14 @@ def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 	totalktime = 0
 	while it < iterations:
 		start = time.time()
-		output = _gsddmmspmm(batchgraphs._graph, "mul", embed, embed, "u", "v", 1)
+		for [graph, s, e] in batchgraphs:
+			output = _gsddmmspmm(graph._graph, "mul", embed, embed, "u", "v", 1)
+			embed = embed + lrate * output
 		end = time.time()
 		totalktime += end - start
 		it += 1
 	print("Total F2V Kernel Time:", totalktime, "seconds")
-	return output
+	return embed
 
 def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
 	it = 0
@@ -105,18 +108,21 @@ def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 	#print(sm_table)
 	while it < iterations:
 		start = time.time()
-		#SDDMM operation
-		X = _gsddmm(batchgraphs._graph, 'dot', embed, embed, lhs_target='u', rhs_target='v')
-		#non-linear transformation
-		#Y = 1.0 - 1.0 / (1 + torch.exp(-X))
-		Y = allFastSigmoid(X, sm_table)
-		#SPMM operation
-		output = _gspmm(batchgraphs._graph.reverse(), "mul", "sum", embed, Y)[0]
+		for [graph, s, e] in batchgraphs: 
+			numnodes = len(graph.nodes())
+			#SDDMM operation
+			X = _gsddmm(graph._graph, 'dot', embed[:numnodes], embed[:numnodes], lhs_target='u', rhs_target='v')
+			#non-linear transformation
+			#Y = 1.0 - 1.0 / (1 + torch.exp(-X))
+			Y = allFastSigmoid(X, sm_table)
+			#SPMM operation
+			output = _gspmm(graph._graph.reverse(), "mul", "sum", embed[:numnodes], Y)[0]
+			embed[:numnodes] = embed[:numnodes] + lrate * output
 		end = time.time()
 		totalktime += end - start
 		it += 1
 	print("Total GDL Kernel Time:", totalktime, "seconds")
-	return output
+	return embed
 
 def dglusingtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 	it = 0
@@ -195,12 +201,14 @@ if __name__ == "__main__":
 	parser.add_argument('-t', '--t', required=False, type=int, default=1, help='Similarity function type, default:1(sigmoid)')
 	parser.add_argument('-r', '--r', required=False, type=float, default=1.0, help='Learning rate, default:1.0')
 	parser.add_argument('-it', '--it', required=False, type=int, default=1, help='Iterations, default:1')
+	parser.add_argument('-b', '--b', required=False, type=int, default=64, help='Iterations, default:64')
 
 	args = parser.parse_args()
 	graph = args.g
 	dim = args.d
 	ftype = args.t
 	lrate = args.r
+	bsize = args.b
 	it = args.it
 
 	if graph == "simple":
@@ -218,12 +226,12 @@ if __name__ == "__main__":
 	embed = torch.rand(N, dim)
 	#print(embed)
 	#need to check batch processing ...
-	#bgraphs = batch_process(graph)
+	bgraphs = batch_process(graph, bsize)
 	#cacheflush()
-	f2voutput = f2vfunctions(graph, embed, ftype, it, lrate)
+	f2voutput = f2vfunctions(bgraphs, embed, ftype, it, lrate)
 	print("Fused SDDMM+SPMM Kernel:")
 	print(f2voutput)
-	dgloutput = dglfunctions(graph, embed, ftype, it, lrate)
+	dgloutput = dglfunctions(bgraphs, embed, ftype, it, lrate)
 	print("DGL: SDDMMSPMM+Transformation+SPMM")
 	print(dgloutput)
 	#out = gsddmmspmmkerneltest(graph, embed)
