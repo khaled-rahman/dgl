@@ -3,7 +3,7 @@ from dgl.sparse import _gsddmmspmm, _gsddmm, _gspmm
 from dgl.data.citation_graph import load_cora, load_citeseer, load_pubmed
 import sys, time
 import numpy as np
-from math import log
+from math import log, exp
 import argparse
 
 def cacheflush():
@@ -32,6 +32,7 @@ def batch_process(graph, batchsize=64):
 		b += batchsize
 	return batches
 
+
 #combined sddmmspmm kernel
 def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 	it = 0
@@ -58,18 +59,57 @@ def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
 	print("Total F2V Kernel Time:", totalktime, "seconds")
 	return output
 	
+SM_BOUND = 5.0
+SM_TABLE_SIZE = 2048
+SM_RESOLUTION = SM_TABLE_SIZE / (2.0 * SM_BOUND)
+
+
+#create sigmoid table to make it equivalent
+def init_SM_TABLE():
+	sm_table = [0.0 for i in range(SM_TABLE_SIZE)]
+	for i in range(SM_TABLE_SIZE):
+		x = 2.0 * SM_BOUND * i / SM_TABLE_SIZE - SM_BOUND
+		sm_table[i] = 1.0 / (1.0 + exp(-x))
+	return sm_table
+
+def FastSigmoid(v, stable):
+	if v > SM_BOUND:
+		return 1.0
+	elif v < -SM_BOUND:
+		return 0.0
+	return stable[int((v + SM_BOUND) * SM_RESOLUTION)]
+
+def allFastSigmoid(T, stable):
+	for i in range(len(T)):
+		T[i] = 1.0 - FastSigmoid(T[i], stable)
+	return T
+
+def scale(v):
+	if v > SM_BOUND:
+		return SM_BOUND
+	elif v < -SM_BOUND:
+		return -SM_BOUND
+	return v
+
+def allscale(T):
+	for i in range(len(T)):
+		for j in range(len(T[i])):
+			T[i][j] = scale(T[i][j])
+	return T
 
 #gdl:sddmm+transformation+spmm kernel
 def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 	it = 0
 	totalktime = 0
+	sm_table = init_SM_TABLE()
+	#print(sm_table)
 	while it < iterations:
 		start = time.time()
 		#SDDMM operation
 		X = _gsddmm(batchgraphs._graph, 'dot', embed, embed, lhs_target='u', rhs_target='v')
 		#non-linear transformation
-		Y = lrate - lrate / (1 + torch.exp(-X))
-		#Y = 1.0 - Y
+		#Y = 1.0 - 1.0 / (1 + torch.exp(-X))
+		Y = allFastSigmoid(X, sm_table)
 		#SPMM operation
 		output = _gspmm(batchgraphs._graph.reverse(), "mul", "sum", embed, Y)[0]
 		end = time.time()
@@ -78,7 +118,7 @@ def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 	print("Total GDL Kernel Time:", totalktime, "seconds")
 	return output
 
-def dgltdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
+def dglusingtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
@@ -87,9 +127,11 @@ def dgltdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 		D = _gsddmm(batchgraphs._graph, "sub", embed, embed, lhs_target='u', rhs_target='v')
 		d = _gsddmm(batchgraphs._graph, 'dot', D, D, lhs_target='e', rhs_target='e')
 		#NonlinearTransformation
-		E = - (2.0 * lrate) / (1.0 + d)
+		E = - 2.0 / (1.0 + d)
 		#SDDMM
 		E = _gsddmm(batchgraphs._graph, "mul", D, E, lhs_target='e', rhs_target='e')
+		#scaling
+		E = allscale(E)
 		#SPMM
 		output = _gspmm(batchgraphs._graph.reverse(), "copy_rhs", "sum", E, E)[0]
 		end = time.time()
@@ -174,6 +216,7 @@ if __name__ == "__main__":
 		graph = data[0]
 	N = len(graph.nodes())
 	embed = torch.rand(N, dim)
+	#print(embed)
 	#need to check batch processing ...
 	#bgraphs = batch_process(graph)
 	#cacheflush()
