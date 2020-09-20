@@ -98,33 +98,37 @@ def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 	it = 0
 	#for repulsive force
 	#sm_table = init_SM_TABLE()
-	totalktime = 0
+	totaltime = 0
+	kerneltime = 0
 	while it < iterations:
 		start = time.time()
 		for [graph, s, e] in batchgraphs:
 			ngraph = negativeSamples(graph, s, e)
 			nV = len(ngraph.nodes())
 			#print(ngraph, ngraph.edges())
+			kstart = time.time()
 			outputa = _gsddmmspmm(graph._graph, "mul", embed, embed, "u", "v", 1)
+			kend = time.time()
 			outputr = calcRepulsive(ngraph, embed, sm_table, nV)
 			embed[s:e] = lrate * outputa[s:e].clone()
 			embed[s:e] = embed[s:e] + lrate * outputr[s:e]
+			kerneltime += kend - kstart
 		end = time.time()
-		totalktime += end - start
+		totaltime += end - start
 		it += 1
-	print("Total F2V Kernel Time:", totalktime, "seconds")
+	print("Total F2V Time:", totaltime, "seconds", " and Total Kernel Time:", kerneltime)
 	return embed
 
 def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
-		start = time.time()
 		for [graph, s, e] in batchgraphs:
+			start = time.time()
 			outputa = _gsddmmspmm(graph._graph, "mul", embed, embed, "u", "v", 2)
+			end = time.time()
 			embed = embed + lrate * outputa
-		end = time.time()
-		totalktime += end - start
+			totalktime += end - start
 		it += 1
 	print("Total F2V Kernel Time:", totalktime, "seconds")
 	return embed
@@ -145,8 +149,9 @@ def allscale(T):
 #gdl:sddmm+transformation+spmm kernel
 def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 	it = 0
-	totalktime = 0
-	sm_table = init_SM_TABLE()
+	totaltime = 0
+	kerneltime = 0
+	#sm_table = init_SM_TABLE()
 	#print(sm_table)
 	while it < iterations:
 		start = time.time()
@@ -156,29 +161,34 @@ def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 			#just to make sure: dim(sparse graph) == dim(embedding)
 			pV = len(graph.nodes())
 			#SDDMM operation
+			kstart = time.time()
 			X = _gsddmm(graph._graph, 'dot', embed[:pV], embed[:pV], lhs_target='u', rhs_target='v')
 			#non-linear transformation
 			#Y = 1.0 - 1.0 / (1 + torch.exp(-X))
 			Y = allFastSigmoid(X, sm_table)
 			#SPMM operation
 			outputa = _gspmm(graph._graph.reverse(), "mul", "sum", embed[:pV], Y)[0]
+			kend = time.time()
 			outputr = calcRepulsive(ngraph, embed, sm_table, nV)
 			embed[s:e] = lrate * outputa[s:e]
 			embed[s:e] = embed[s:e] + lrate * outputr[s:e]
+			kerneltime += kend - kstart
 		end = time.time()
-		totalktime += end - start
+		totaltime += end - start
 		it += 1
-	print("Total GDL Kernel Time:", totalktime, "seconds")
+	print("Total GDL Total Time:", totaltime, "seconds", " and Total Kernel Time:", kerneltime)
 	return embed
 
 def dglusingtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 	it = 0
 	totalktime = 0
 	while it < iterations:
-		start = time.time()
 		for [graph, s, e] in batchgraphs:
+			#just to make sure: dim(sparse graph) == dim(embedding)
+			pV = len(graph.nodes())
+			start = time.time()
 			#SDDMM
-			D = _gsddmm(graph._graph, "sub", embed, embed, lhs_target='u', rhs_target='v')
+			D = _gsddmm(graph._graph, "sub", embed[:pV], embed[:pV], lhs_target='u', rhs_target='v')
 			d = _gsddmm(graph._graph, 'dot', D, D, lhs_target='e', rhs_target='e')
 			#NonlinearTransformation
 			E = - 2.0 / (1.0 + d)
@@ -188,9 +198,9 @@ def dglusingtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 			E = allscale(E)
 			#SPMM
 			outputa = _gspmm(graph._graph.reverse(), "copy_rhs", "sum", E, E)[0]
-			embed = embed + lrate * outputa
-		end = time.time()
-		totalktime += end - start
+			end = time.time()
+			embed[:pV] = embed[:pV] + lrate * outputa[:pV]
+			totalktime += end - start
 		it += 1
 	print("Total GDL Kernel Time:", totalktime, "seconds")
 	return embed
