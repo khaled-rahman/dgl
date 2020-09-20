@@ -4,6 +4,8 @@ from dgl.data.citation_graph import load_cora, load_citeseer, load_pubmed
 import sys, time
 import numpy as np
 from math import log, exp
+from scipy.io import mmread,mminfo
+import networkx as nx
 import argparse
 
 def cacheflush():
@@ -201,7 +203,8 @@ if __name__ == "__main__":
 	parser.add_argument('-t', '--t', required=False, type=int, default=1, help='Similarity function type, default:1(sigmoid)')
 	parser.add_argument('-r', '--r', required=False, type=float, default=1.0, help='Learning rate, default:1.0')
 	parser.add_argument('-it', '--it', required=False, type=int, default=1, help='Iterations, default:1')
-	parser.add_argument('-b', '--b', required=False, type=int, default=64, help='Iterations, default:64')
+	parser.add_argument('-b', '--b', required=False, type=int, default=64, help='Batch Size, default:64')
+	parser.add_argument('-p', '--p', required=False, type=str, default="", help='Path to mtx graph format, default:None')
 
 	args = parser.parse_args()
 	graph = args.g
@@ -210,8 +213,13 @@ if __name__ == "__main__":
 	lrate = args.r
 	bsize = args.b
 	it = args.it
-
-	if graph == "simple":
+	path = args.p
+	
+	if len(path) > 0:
+		G = mmread(path)
+		nxgraph = nx.Graph(G)
+		graph = dgl.from_networkx(nxgraph)
+	elif graph == "simple":
 		graph = dgl.graph(([0, 0, 1, 1, 2, 3], [1, 2, 2, 4, 3, 4]))
 	elif graph == "citeseer":
 		data = load_citeseer(".")
@@ -223,6 +231,7 @@ if __name__ == "__main__":
 		data = load_cora(".")
 		graph = data[0]
 	N = len(graph.nodes())
+	print("#Nodes:", N, "#Edges:", len(graph.edges()[0]))
 	embed = torch.rand(N, dim)
 	#print(embed)
 	#need to check batch processing ...
