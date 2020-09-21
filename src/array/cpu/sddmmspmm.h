@@ -6,6 +6,7 @@
 #include <iostream>
 #include "../selector.h"
 #include "sddmm.h"
+#include "kernels.h"
 
 #define SM_TABLE_SIZE 2048
 #define SM_BOUND 5.0
@@ -116,27 +117,8 @@ const int64_t dim = bcast.out_len;
 DType* O = out.Ptr<DType>();
 if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
 else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-/*
-#pragma omp parallel for
-for (IdType rid = 0; rid < csr.num_rows; ++rid) {
-	const IdType row_start = indptr[rid], row_end = indptr[rid + 1];
-	const IdType iindex = rid * dim;
-	//DType* out_off = O + cid * dim;
-	for (IdType j = row_start; j < row_end; ++j){
-		//cout << rid << ", " << indices[j] << endl;
-		const IdType cid = indices[j];
-		const IdType jindex = cid * dim;
-		DType attrc = 0;
-		for (int64_t k = 0; k < dim; ++k) {
-        		attrc += X[iindex + k] * Y[jindex + k];
-      		}
-		DType d1 = 1.0 / (1.0 + exp(-attrc));
-		for (int64_t k = 0; k < dim; ++k) {
-			O[iindex+k] = O[iindex+k]  + (1.0 - d1) * Y[jindex + k];
-		}
-    	}
-  }
-*/
+//dgsddmm_csr('N', M, N, K, alpha, nnz, rows, cols, values, colids, rowptr, rowptr+1, a, lda, b, ldb, beta, c, ldc);
+
 }	
 }
 }

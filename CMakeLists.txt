@@ -10,6 +10,21 @@ include(cmake/util/Util.cmake)
 include(cmake/util/MshadowUtil.cmake)
 include(cmake/util/FindCUDA.cmake)
 
+## for new library
+#find_library( GSDDMM_LIB dlibgsddmm_pt ${CMAKE_CURRENT_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib/ )
+#message(STATUS "${GSDDMM}")
+add_library( dlibgsddmm_pt SHARED IMPORTED )
+set_target_properties( dlibgsddmm_pt PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib/dlibgsddmm_pt.a )
+#TARGET_LINK_LIBRARIES(dgl dlibgsddmm_pt)
+#LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib)
+#find_program (MAKE_EXECUTABLE NAMES make)
+#set(NEWLIBDIR, "/N/u2/m/morahma/Research/Fall2020/GITHUBDGL/dgl/src/array/cpu/gesddmm")
+#set(newlib_makefile "${NEWLIBDIR}/Makefile")
+#file (WRITE "${newlib_makefile}")
+
+
+####################
+
 if(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
   include(${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
 else()
@@ -160,7 +175,7 @@ if (LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
   add_definitions(-DPARALLEL_ALGORITHMS)
 endif(LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
 
-target_link_libraries(dgl ${DGL_LINKER_LIBS} ${DGL_RUNTIME_LINKER_LIBS})
+target_link_libraries(dgl ${DGL_LINKER_LIBS} ${DGL_RUNTIME_LINKER_LIBS} ${dlibgsddmm_pt})
 
 # Installation rules
 install(TARGETS dgl DESTINATION lib${LIB_SUFFIX})
