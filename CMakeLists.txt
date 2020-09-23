@@ -13,8 +13,8 @@ include(cmake/util/FindCUDA.cmake)
 ## for new library
 #find_library( GSDDMM_LIB dlibgsddmm_pt ${CMAKE_CURRENT_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib/ )
 #message(STATUS "${GSDDMM}")
-add_library( dlibgsddmm_pt SHARED IMPORTED )
-set_target_properties( dlibgsddmm_pt PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib/dlibgsddmm_pt.a )
+#add_library( dlibgsddmm_pt SHARED IMPORTED )
+#set_target_properties( dlibgsddmm_pt PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib/dlibgsddmm_pt.a )
 #TARGET_LINK_LIBRARIES(dgl dlibgsddmm_pt)
 #LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/src/array/cpu/gesddmm/kernels/lib)
 #find_program (MAKE_EXECUTABLE NAMES make)
@@ -64,6 +64,7 @@ include_directories("third_party/minigun/minigun")
 include_directories("third_party/minigun/third_party/moderngpu/src")
 include_directories("third_party/cub/")
 include_directories("third_party/phmap/")
+include_directories("src/array/cpu/gesddmm/kernels/generated/include")
 
 # initial variables
 set(DGL_LINKER_LIBS "")
@@ -175,7 +176,13 @@ if (LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
   add_definitions(-DPARALLEL_ALGORITHMS)
 endif(LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
 
-target_link_libraries(dgl ${DGL_LINKER_LIBS} ${DGL_RUNTIME_LINKER_LIBS} ${dlibgsddmm_pt})
+set(CMAKE_C_FLAGS "-O2 -Wall -O3 -mavx512f -mavx512dq ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -std=c++11 -O3 -mavx512f -mavx512dq ${CMAKE_CXX_FLAGS}")
+add_definitions(-Dibit=64 -fopenmp -DPTTIME -DLDB -DNTHREADS=10 -DVLEN=16 -DBLC_ARCH -DBLC_X86 -DBLC_AVX512)
+add_subdirectory("src/array/cpu/gesddmm/kernels/generated/")
+list(APPEND DGL_LINKER_LIBS alldim)
+
+target_link_libraries(dgl ${DGL_LINKER_LIBS} ${DGL_RUNTIME_LINKER_LIBS})
 
 # Installation rules
 install(TARGETS dgl DESTINATION lib${LIB_SUFFIX})

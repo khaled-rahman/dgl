@@ -9,7 +9,7 @@
 #include <math.h>
 #include <iostream>
 #include "../selector.h"
-#define INDEXTYPE int
+#define INDEXTYPE int64_t
 
 #ifdef __cplusplus 
    extern "C"
@@ -20,7 +20,7 @@
  */
 
 //#ifndef DREAL 
-   #define BCL_TYPE double 
+//   #define BCL_TYPE double 
 // double function prototypes  
 void dgsddmm_csr (const char tkern, const INDEXTYPE m, const INDEXTYPE n, 
       const INDEXTYPE k,const double alpha, const INDEXTYPE nnz, 
@@ -37,6 +37,7 @@ void trusted_dgsddmm_csr (const char tkern, const INDEXTYPE m, const INDEXTYPE n
       const double beta, double *C, const INDEXTYPE ldc);
 //#else
 /*   #define BCL_TYPE float 
+*/
 void sgsddmm_csr (const char tkern, const INDEXTYPE m, const INDEXTYPE n, 
       const INDEXTYPE k,const float alpha, const INDEXTYPE nnz, 
       const INDEXTYPE rows, const INDEXTYPE cols, const INDEXTYPE *indx, 
@@ -50,7 +51,6 @@ void trusted_sgsddmm_csr (const char tkern, const INDEXTYPE m, const INDEXTYPE n
       const INDEXTYPE *pntrb, const INDEXTYPE *pntre, const float *A, 
       const INDEXTYPE lda, const float *B, const INDEXTYPE ldb, 
       const float beta, float *C, const INDEXTYPE ldc);
-*/
 //#endif
 
 #ifdef __cplusplus 
