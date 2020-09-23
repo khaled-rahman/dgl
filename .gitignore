@@ -134,7 +134,7 @@ examples/pytorch/.DS_Store
 examples/.DS_Store
 examples/pytorch/generative_graph/*.p
 .DS_Store
-
+examples/pytorch/force2vec/results/*
 # data directory
 _download
 
