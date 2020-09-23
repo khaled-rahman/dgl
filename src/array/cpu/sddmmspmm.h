@@ -7,7 +7,6 @@
 #include "../selector.h"
 #include "sddmm.h"
 #include "kernels.h"
-
 #define SM_TABLE_SIZE 2048
 #define SM_BOUND 5.0
 #define SM_RESOLUTION SM_TABLE_SIZE/(2.0 * SM_BOUND)
@@ -68,6 +67,19 @@ for (IdType rid = 0; rid < N; ++rid) {
 
 }
 
+//tkern: s, t
+//m: rows A: M x K
+//n: B: N x K
+//K: embedding dimension
+//Sparse matrix: M x N
+//alpha: 1.0
+//rows: M, cols: N
+//beta:1, 0, no sum with C, 1 - sum
+//nnz: 1.0 total nnz in graph
+//lda: K, blocking dimension.. but now K
+//B: K, pore change hobe.
+//C: K.
+//threads set max cores
 
 template <typename IdType, typename DType>
 void SDDMMSPMMCsrSigmoid(const IdType *indptr, const IdType *indices, const IdType *edges, 
@@ -114,10 +126,12 @@ const DType* X = lhs.Ptr<DType>();
 const DType* Y = rhs.Ptr<DType>();
 const int64_t dim = bcast.out_len;
 // lhs_dim = bcast.lhs_len, rhs_dim = bcast.rhs_len, reduce_size = bcast.reduce_size;
+
 DType* O = out.Ptr<DType>();
-if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-//dgsddmm_csr('N', M, N, K, alpha, nnz, rows, cols, values, colids, rowptr, rowptr+1, a, lda, b, ldb, beta, c, ldc);
+//if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+//else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+//#define DREAL
+dgsddmm_csr('s', csr.num_rows, csr.num_rows, dim, 1.0, 1.0, csr.num_rows, csr.num_rows, (const int*)indptr, (const int*)indices, (const int*)indices+1, (const double*)X, dim, (const double*)Y, dim, 1.0, (double*)O, dim);
 
 }	
 }

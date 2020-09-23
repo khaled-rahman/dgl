@@ -3,7 +3,7 @@ from dgl.sparse import _gsddmmspmm, _gsddmm, _gspmm
 from dgl.data.citation_graph import load_cora, load_citeseer, load_pubmed
 import sys, time, random
 import numpy as np
-from math import log, exp
+from math import log, exp, isnan
 from scipy.io import mmread,mminfo
 import networkx as nx
 import argparse
@@ -33,6 +33,8 @@ def init_SM_TABLE():
 sm_table = init_SM_TABLE()
 
 def FastSigmoid(v, stable):
+	if isnan(v):
+		return 1.0
 	if v > SM_BOUND:
 		return 1.0
 	elif v < -SM_BOUND:
@@ -301,8 +303,8 @@ if __name__ == "__main__":
 	f2voutput = f2vfunctions(bgraphs, embed.clone(), ftype, it, lrate)
 	print("Fused SDDMM+SPMM Kernel:")
 	print(f2voutput)
-	dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
-	print("DGL: SDDMMSPMM+Transformation+SPMM")
-	print(dgloutput)
+	#dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
+	#print("DGL: SDDMMSPMM+Transformation+SPMM")
+	#print(dgloutput)
 	#out = gsddmmspmmkerneltest(graph, embed)
 	#print(out)

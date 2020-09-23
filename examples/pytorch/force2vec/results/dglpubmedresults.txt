@@ -1,0 +1,238 @@
+Param:iter=,dim=16,batch=128,type=1
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Total Time: 27.325071096420288 seconds  and Total Kernel Time: 17.938520908355713
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[-4.5139e+18, -4.0808e+18, -4.0699e+18,  ..., -4.0786e+18,
+         -4.3672e+18, -4.5159e+18],
+        [-4.1640e+17, -3.7645e+17, -3.7545e+17,  ..., -3.7624e+17,
+         -4.0287e+17, -4.1659e+17],
+        [-3.8952e+22, -3.5215e+22, -3.5121e+22,  ..., -3.5196e+22,
+         -3.7686e+22, -3.8969e+22],
+        ...,
+        [-6.9517e+24, -6.2847e+24, -6.2679e+24,  ..., -6.2813e+24,
+         -6.7258e+24, -6.9548e+24],
+        [-2.6429e+19, -2.3893e+19, -2.3829e+19,  ..., -2.3880e+19,
+         -2.5570e+19, -2.6441e+19],
+        [-7.9547e+21, -7.1914e+21, -7.1722e+21,  ..., -7.1875e+21,
+         -7.6962e+21, -7.9581e+21]])
+Param:iter=,dim=16,batch=128,type=2
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Kernel Time: 160.44921278953552 seconds
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[ 0.9917,  0.3030,  0.7054,  ...,  0.5118,  0.3482,  0.4620],
+        [ 0.8236,  0.9091,  0.7406,  ...,  0.5629,  0.5572,  0.7432],
+        [ 0.8695, -0.0028,  0.7688,  ...,  0.8454,  0.6019,  0.5605],
+        ...,
+        [ 0.3951,  0.6261,  0.7558,  ...,  0.3827,  0.4905,  0.8359],
+        [ 0.6598,  0.6354,  0.7069,  ...,  0.4471,  0.6344,  0.5592],
+        [ 0.5451,  0.4343,  0.6270,  ...,  0.3148,  0.5938,  0.6726]])
+Param:iter=,dim=64,batch=128,type=1
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Total Time: 25.631123781204224 seconds  and Total Kernel Time: 16.810871839523315
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[-5.6045e+18, -4.8576e+18, -5.3019e+18,  ..., -5.6416e+18,
+         -5.6117e+18, -5.2668e+18],
+        [-5.1699e+17, -4.4809e+17, -4.8907e+17,  ..., -5.2041e+17,
+         -5.1765e+17, -4.8584e+17],
+        [-4.8370e+22, -4.1923e+22, -4.5758e+22,  ..., -4.8690e+22,
+         -4.8431e+22, -4.5455e+22],
+        ...,
+        [-8.6327e+24, -7.4822e+24, -8.1665e+24,  ..., -8.6898e+24,
+         -8.6437e+24, -8.1124e+24],
+        [-3.2824e+19, -2.8449e+19, -3.1051e+19,  ..., -3.3041e+19,
+         -3.2866e+19, -3.0846e+19],
+        [-9.8776e+21, -8.5612e+21, -9.3442e+21,  ..., -9.9430e+21,
+         -9.8902e+21, -9.2824e+21]])
+Param:iter=,dim=64,batch=128,type=2
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Kernel Time: 727.5185406208038 seconds
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[0.5654, 0.4263, 0.5024,  ..., 0.4674, 0.5198, 0.4829],
+        [0.1592, 0.3576, 0.5449,  ..., 0.4662, 0.3920, 0.5401],
+        [0.6175, 0.4155, 0.7257,  ..., 0.6326, 0.5034, 0.2270],
+        ...,
+        [0.4877, 0.7511, 0.6528,  ..., 0.3888, 0.7440, 0.3173],
+        [0.6839, 0.5685, 0.3600,  ..., 0.4309, 0.7284, 0.4365],
+        [0.4572, 0.6288, 0.7022,  ..., 0.5698, 0.2830, 0.5116]])
+Param:iter=,dim=128,batch=128,type=1
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Total Time: 18.02265691757202 seconds  and Total Kernel Time: 11.764013767242432
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[-5.4022e+18, -5.6032e+18, -5.6945e+18,  ..., -5.1552e+18,
+         -5.1550e+18, -5.3884e+18],
+        [-4.9833e+17, -5.1687e+17, -5.2529e+17,  ..., -4.7554e+17,
+         -4.7553e+17, -4.9706e+17],
+        [-4.6624e+22, -4.8358e+22, -4.9146e+22,  ..., -4.4492e+22,
+         -4.4490e+22, -4.6504e+22],
+        ...,
+        [-8.3210e+24, -8.6306e+24, -8.7711e+24,  ..., -7.9405e+24,
+         -7.9403e+24, -8.2998e+24],
+        [-3.1639e+19, -3.2816e+19, -3.3350e+19,  ..., -3.0192e+19,
+         -3.0191e+19, -3.1558e+19],
+        [-9.5211e+21, -9.8752e+21, -1.0036e+22,  ..., -9.0857e+21,
+         -9.0854e+21, -9.4967e+21]])
+Param:iter=,dim=128,batch=128,type=2
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Kernel Time: 1551.8678374290466 seconds
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[0.7967, 0.3998, 0.6424,  ..., 0.0286, 0.4230, 0.3361],
+        [0.6875, 0.4116, 0.5020,  ..., 0.5009, 0.4921, 0.3679],
+        [0.3510, 0.3945, 0.5626,  ..., 0.4852, 0.6565, 0.3777],
+        ...,
+        [0.6411, 0.3749, 0.5822,  ..., 0.7191, 0.7436, 0.3277],
+        [0.3909, 0.3045, 0.7316,  ..., 0.5249, 0.3956, 0.2993],
+        [0.4042, 0.6299, 0.5120,  ..., 0.6505, 0.5759, 0.4216]])
+Param:iter=,dim=16,batch=256,type=1
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Total Time: 25.25735068321228 seconds  and Total Kernel Time: 16.430188179016113
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[-1.1487e+20, -1.0904e+20, -1.0256e+20,  ..., -1.1846e+20,
+         -1.0584e+20, -9.7705e+19],
+        [-1.2339e+19, -1.1712e+19, -1.1016e+19,  ..., -1.2723e+19,
+         -1.1369e+19, -1.0495e+19],
+        [-7.1395e+24, -6.7771e+24, -6.3742e+24,  ..., -7.3621e+24,
+         -6.5782e+24, -6.0724e+24],
+        ...,
+        [-8.3975e+27, -7.9712e+27, -7.4973e+27,  ..., -8.6593e+27,
+         -7.7372e+27, -7.1424e+27],
+        [-2.1535e+24, -2.0442e+24, -1.9227e+24,  ..., -2.2207e+24,
+         -1.9842e+24, -1.8316e+24],
+        [-7.5471e+26, -7.1640e+26, -6.7381e+26,  ..., -7.7824e+26,
+         -6.9537e+26, -6.4191e+26]])
+Param:iter=,dim=16,batch=256,type=2
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Kernel Time: 159.64157938957214 seconds
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[0.5574, 0.2535, 0.3771,  ..., 0.8184, 0.6316, 1.3555],
+        [0.7369, 0.3423, 0.5071,  ..., 0.6901, 0.5544, 0.7703],
+        [0.2162, 0.3089, 0.5819,  ..., 0.7525, 0.5303, 0.4786],
+        ...,
+        [0.4159, 0.3786, 0.4657,  ..., 0.6900, 0.3732, 0.6088],
+        [0.7933, 0.2552, 0.5153,  ..., 0.1567, 0.3287, 0.8998],
+        [0.2673, 0.5684, 0.4243,  ..., 0.4202, 0.6206, 0.5878]])
+Param:iter=,dim=64,batch=256,type=1
+Loading from cache failed, re-processing.
+Finished data loading and preprocessing.
+  NumNodes: 19717
+  NumEdges: 88651
+  NumFeats: 500
+  NumClasses: 3
+  NumTrainingSamples: 60
+  NumValidationSamples: 500
+  NumTestSamples: 1000
+Done saving data into cached files.
+#Nodes: 19717 #Edges: 88651
+Creating batch graphs...
+Done!
+Total GDL Total Time: 24.064754247665405 seconds  and Total Kernel Time: 15.522812604904175
+DGL: SDDMMSPMM+Transformation+SPMM
+tensor([[-1.5392e+20, -1.5381e+20, -1.5654e+20,  ..., -1.5291e+20,
+         -1.4289e+20, -1.4464e+20],
+        [-1.6533e+19, -1.6521e+19, -1.6814e+19,  ..., -1.6424e+19,
+         -1.5348e+19, -1.5536e+19],
+        [-9.5662e+24, -9.5596e+24, -9.7288e+24,  ..., -9.5035e+24,
+         -8.8809e+24, -8.9897e+24],
+        ...,
+        [-1.1252e+28, -1.1244e+28, -1.1443e+28,  ..., -1.1178e+28,
+         -1.0446e+28, -1.0574e+28],
+        [-2.8855e+24, -2.8835e+24, -2.9345e+24,  ..., -2.8666e+24,
+         -2.6788e+24, -2.7116e+24],
+        [-1.0112e+27, -1.0105e+27, -1.0284e+27,  ..., -1.0046e+27,
+         -9.3879e+26, -9.5029e+26]])
+Param:iter=,dim=64,batch=256,type=2

@@ -10,6 +10,7 @@
 #include <dgl/runtime/packed_func.h>
 #include <dgl/runtime/registry.h>
 #include <dgl/array.h>
+#include "array/cpu/kernels.h"
 #include <dgl/graph_interface.h>
 #include <algorithm>
 #include <vector>
