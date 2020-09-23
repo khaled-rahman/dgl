@@ -131,8 +131,8 @@ DType* O = out.Ptr<DType>();
 //if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
 //else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
 //#define DREAL
-cout << "Sizeof:" << sizeof(IdType) << "," << sizeof(DType) << endl;
-cout << "Rows:" << csr.num_rows << ", Dim:" << dim << ", indptr:"<< indptr[0] << ",indices:" << indices[0] << endl;
+//cout << "Sizeof:" << sizeof(IdType) << "," << sizeof(DType) << endl;
+//cout << "Rows:" << csr.num_rows << ", Dim:" << dim << ", indptr:"<< indptr[0] << ",indices:" << indices[0] << endl;
 sgsddmm_csr('s', csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
 
 }	
