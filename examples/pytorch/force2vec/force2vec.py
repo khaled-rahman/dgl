@@ -47,11 +47,12 @@ def allFastSigmoid(T, stable, add = 1.0):
 	return T
 
 	
-def batch_process(graph, batchsize=256):
+def batch_process(graph, batchsize=256, nbatch=5):
 	batches = []
 	b = 0
 	N = len(graph.nodes())
 	edges = [np.array(graph.edges()[0]),np.array(graph.edges()[1])]
+	i = 1
 	while b < N:
 		bedges = []
 		for i in range(b, min(b+batchsize, N)):
@@ -66,6 +67,9 @@ def batch_process(graph, batchsize=256):
 		
 		#batches.append(bgraph)
 		b += batchsize
+		i += 1
+		if i > nbatch:
+			break
 	return batches
 
 def negativeSamples(graph, start, end, nsamples = 2):
@@ -111,9 +115,9 @@ def f2vusingsigmoid(batchgraphs, embed, iterations = 1, lrate=1.0):
 			kstart = time.time()
 			outputa = _gsddmmspmm(graph._graph, "mul", embed, embed, "u", "v", 1)
 			kend = time.time()
-			outputr = calcRepulsive(ngraph, embed, sm_table, nV)
-			embed[s:e] = lrate * outputa[s:e].clone()
-			embed[s:e] = embed[s:e] + lrate * outputr[s:e]
+			#outputr = calcRepulsive(ngraph, embed, sm_table, nV)
+			#embed[s:e] = lrate * outputa[s:e].clone()
+			#embed[s:e] = embed[s:e] + lrate * outputr[s:e]
 			kerneltime += kend - kstart
 		end = time.time()
 		totaltime += end - start
@@ -129,7 +133,7 @@ def f2vusingtdistribution(batchgraphs, embed, iterations = 1, lrate=1.0):
 			start = time.time()
 			outputa = _gsddmmspmm(graph._graph, "mul", embed, embed, "u", "v", 2)
 			end = time.time()
-			embed = embed + lrate * outputa
+			#embed = embed + lrate * outputa
 			totalktime += end - start
 		it += 1
 	print("Total F2V Kernel Time:", totalktime, "seconds")
@@ -171,9 +175,9 @@ def dglusingsigmoid(batchgraphs, embed, iterations=1, lrate=1.0):
 			#SPMM operation
 			outputa = _gspmm(graph._graph.reverse(), "mul", "sum", embed[:pV], Y)[0]
 			kend = time.time()
-			outputr = calcRepulsive(ngraph, embed, sm_table, nV)
-			embed[s:e] = lrate * outputa[s:e]
-			embed[s:e] = embed[s:e] + lrate * outputr[s:e]
+			#outputr = calcRepulsive(ngraph, embed, sm_table, nV)
+			#embed[s:e] = lrate * outputa[s:e]
+			#embed[s:e] = embed[s:e] + lrate * outputr[s:e]
 			kerneltime += kend - kstart
 		end = time.time()
 		totaltime += end - start
@@ -201,7 +205,7 @@ def dglusingtdistribution(batchgraphs, embed, iterations=1, lrate = 1.0):
 			#SPMM
 			outputa = _gspmm(graph._graph.reverse(), "copy_rhs", "sum", E, E)[0]
 			end = time.time()
-			embed[:pV] = embed[:pV] + lrate * outputa[:pV]
+			#embed[:pV] = embed[:pV] + lrate * outputa[:pV]
 			totalktime += end - start
 		it += 1
 	print("Total GDL Kernel Time:", totalktime, "seconds")
@@ -302,9 +306,10 @@ if __name__ == "__main__":
 	#cacheflush()
 	f2voutput = f2vfunctions(bgraphs, embed.clone(), ftype, it, lrate)
 	print("Fused SDDMM+SPMM Kernel:")
-	print(f2voutput)
-	#dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
-	#print("DGL: SDDMMSPMM+Transformation+SPMM")
+	#print(f2voutput)
+	cacheflush()
+	dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
+	print("DGL: SDDMMSPMM+Transformation+SPMM")
 	#print(dgloutput)
 	#out = gsddmmspmmkerneltest(graph, embed)
 	#print(out)

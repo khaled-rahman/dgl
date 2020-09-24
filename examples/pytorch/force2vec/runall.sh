@@ -10,6 +10,15 @@ blogdir="/N/u2/m/morahma/Research/Fall2019/GraphEmbedding/HomophilyEmbedding/Gra
 flickrdir="/N/u2/m/morahma/Research/Fall2019/GraphEmbedding/HomophilyEmbedding/GraphEmbedding/force2vec/datasets/input/flickr.mtx"
 youtubedir="/N/u2/m/morahma/Research/Fall2019/GraphEmbedding/HomophilyEmbedding/GraphEmbedding/force2vec/datasets/input/youtube.mtx"
 
+echo "blogcatalog" >> biggraphresults.txt
+python force2vec.py -p ${blogdir} -it 2 -d 128 -t 1 -b 1024 >> biggraphresults.txt
+echo "flickr" >> biggraphresults.txt
+python force2vec.py -p ${flickrdir} -it 2 -d 128 -t 1 -b 1024 >> biggraphresults.txt
+echo "youtube" >> biggraphresults.txt
+python force2vec.py -p ${youtubedir} -it 2 -d 128 -t 1 -b 1024 >> biggraphresults.txt
+
+<< COMMENT
+'''
 for iter in "${ITERATIONS[@]}"
 do
 	for b in "${BATCHES[@]}"
@@ -41,3 +50,5 @@ do
 		done
 	done
 done
+'''
+COMMENT
