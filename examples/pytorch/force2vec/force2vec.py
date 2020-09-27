@@ -273,6 +273,29 @@ def dglfunctions(graph, embed, ftype, it, lr):
 		dgloutput = dglusingtdistribution(graph, embed, it, lr)
 	return dgloutput
 
+def readmtxGraph(path):
+	gpath = open(path, "r")
+	left = []
+	right = []
+	output = []
+	for line in gpath.readlines():
+		if line.startswith("%"):
+			continue
+		else:
+			tokens = line.strip().split()
+			if len(tokens) == 2:
+				u = int(tokens[0])-1
+				v = int(tokens[1])-1
+				#left.append(min(u,v))
+				#right.append(max(u,v))
+				output.append([u,v])
+	output.sort(key = lambda x: x[0])
+	output = np.array(output)
+	left = output[:,0]
+	right = output[:,1]
+	#print("Length:", len(left), ":", left)
+	return (left, right)	
+
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Demonstration of Force2Vec using fused kernels and DGL SDDMM and SpMM kernels', add_help=True)
@@ -294,9 +317,12 @@ if __name__ == "__main__":
 	path = args.p
 	
 	if len(path) > 0:
-		G = mmread(path)
-		nxgraph = nx.Graph(G)
-		graph = dgl.from_networkx(nxgraph)
+		#G = mmread(path)
+		#nxgraph = nx.Graph(G)
+		#graph = dgl.from_networkx(nxgraph)
+		edges = readmtxGraph(path)
+		graph = dgl.graph(edges)
+		#print(graph.edges())
 	elif graph == "simple":
 		graph = dgl.graph(([0, 0, 1, 1, 2, 3], [1, 2, 2, 4, 3, 4]))
 	elif graph == "citeseer":
@@ -320,12 +346,12 @@ if __name__ == "__main__":
 		bgraphs = batch_process(graph, bsize)
 	print("Done!")
 	#cacheflush()
-	f2voutput = f2vfunctions(bgraphs, embed.clone(), ftype, it, lrate)
-	print("Fused SDDMM+SPMM Kernel:")
+	#f2voutput = f2vfunctions(bgraphs, embed.clone(), ftype, it, lrate)
+	#print("Fused SDDMM+SPMM Kernel:")
 	#print(f2voutput)
 	#cacheflush()
-	#dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
-	#print("DGL: SDDMMSPMM+Transformation+SPMM")
+	dgloutput = dglfunctions(bgraphs, embed.clone(), ftype, it, lrate)
+	print("DGL: SDDMMSPMM+Transformation+SPMM")
 	#print(dgloutput)
 	#out = gsddmmspmmkerneltest(graph, embed)
 	#print(out)
