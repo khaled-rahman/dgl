@@ -178,7 +178,7 @@ endif(LIBCXX_ENABLE_PARALLEL_ALGORITHMS)
 
 set(CMAKE_C_FLAGS "-O2 -Wall -O3 -mavx512f -mavx512dq ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -std=c++11 -O3 -mavx512f -mavx512dq ${CMAKE_CXX_FLAGS}")
-add_definitions(-Dibit=64 -fopenmp -DPTTIME -DLDB -DNTHREADS=10 -DVLEN=16 -DBLC_ARCH -DBLC_X86 -DBLC_AVX512)
+add_definitions(-Dibit=64 -fopenmp -DPTTIME -DLDB -DVLEN=16 -DBLC_ARCH -DBLC_X86 -DBLC_AVX512)
 add_subdirectory("src/array/cpu/gesddmm/kernels/generated/")
 list(APPEND DGL_LINKER_LIBS alldim)
 
