@@ -20,3 +20,6 @@
 [submodule "third_party/phmap"]
 	path = third_party/phmap
 	url = https://github.com/greg7mdp/parallel-hashmap.git
+[submodule "src/array/cpu/gesddmm"]
+	path = src/array/cpu/gesddmm
+	url = https://github.iu.edu/msujon/GE-SDDMM.git
