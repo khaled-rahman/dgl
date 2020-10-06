@@ -4,14 +4,76 @@
 #include <dgl/bcast.h>
 #include <math.h>
 #include <iostream>
+#include <omp.h>
 #include "../selector.h"
 #include "sddmm.h"
 #include "kernels.h"
+#define SOP_UDEF_IMPL 1
+#define ROP_UDEF_IMPL 1
+#define VSC_UDEF_IMPL 1
+#include "fusedMM.h"
 #define SM_TABLE_SIZE 2048
 #define SM_BOUND 5.0
 #define SM_RESOLUTION SM_TABLE_SIZE/(2.0 * SM_BOUND)
 
 using namespace std;
+
+VALUETYPE *SM_TABLE;
+void uinit_SM_TABLE()
+{
+   VALUETYPE x;
+   SM_TABLE = (VALUETYPE*)malloc(SM_TABLE_SIZE*sizeof(VALUETYPE));
+   assert(SM_TABLE);
+   for(INDEXTYPE i = 0; i < SM_TABLE_SIZE; i++)
+   {
+      x = 2.0 * SM_BOUND * i / SM_TABLE_SIZE - SM_BOUND;
+      SM_TABLE[i] = 1.0 / (1 + exp(-x));
+   }
+}
+inline VALUETYPE uscale_SM(VALUETYPE val)
+{
+   VALUETYPE sval;
+   /* hopefully compiler will figure out and replace it max min instruction */
+   sval = (val > SM_BOUND) ? SM_BOUND : val;
+   sval = (val < -SM_BOUND) ? -SM_BOUND : val;
+   return(sval);
+}
+VALUETYPE ufast_SM(VALUETYPE v)
+{
+   if (v > SM_BOUND) return 1.0;
+   else if (v < -SM_BOUND) return 0.0;
+   return SM_TABLE[(INDEXTYPE)((v + SM_BOUND) * SM_RESOLUTION)];
+}
+
+int SOP_UDEF_FUNC(VALUETYPE val, VALUETYPE &out)
+{
+   out = 1.0 - ufast_SM(val);
+   return FUSEDMM_SUCCESS_RETURN;
+}
+int ROP_UDEF_FUNC(INDEXTYPE lhs_dim, const VALUETYPE *lhs, INDEXTYPE rhs_dim,
+      const VALUETYPE *rhs, VALUETYPE &out)
+{
+   out = 0.0;
+   for (INDEXTYPE i = 0; i < rhs_dim; i += 1)
+   {
+      out += rhs[i] * rhs[i];
+   }
+   return FUSEDMM_SUCCESS_RETURN;
+}
+VALUETYPE scale(VALUETYPE v){
+        if(v > SM_BOUND) return SM_BOUND;
+        else if(v < -SM_BOUND) return -SM_BOUND;
+        return v;
+}
+int VSC_UDEF_FUNC(INDEXTYPE rhs_dim, const VALUETYPE *rhs, VALUETYPE scal,
+      INDEXTYPE out_dim, VALUETYPE *out)
+{
+   for (INDEXTYPE i = 0; i < rhs_dim; i += 1)
+   {
+      out[i] = scale(scal * rhs[i]);
+   }
+   return FUSEDMM_SUCCESS_RETURN;
+}
 
 namespace dgl {
 namespace aten {
@@ -30,7 +92,6 @@ DType fast_SM(DType v, DType *sm_table){
         else if(v < -SM_BOUND) return 0.0;
         return sm_table[(int)((v + SM_BOUND) * SM_RESOLUTION)];
 }
-
 template <typename IdType, typename DType>
 void init_SM_TABLE(DType *sm_table){
         DType x;
@@ -67,20 +128,6 @@ for (IdType rid = 0; rid < N; ++rid) {
 
 }
 
-//tkern: s, t
-//m: rows A: M x K
-//n: B: N x K
-//K: embedding dimension
-//Sparse matrix: M x N
-//alpha: 1.0
-//rows: M, cols: N
-//beta:1, 0, no sum with C, 1 - sum
-//nnz: 1.0 total nnz in graph
-//lda: K, blocking dimension.. but now K
-//B: K, pore change hobe.
-//C: K.
-//threads set max cores
-
 template <typename IdType, typename DType>
 void SDDMMSPMMCsrSigmoid(const IdType *indptr, const IdType *indices, const IdType *edges, 
 		const DType *X, const DType *Y, DType *O, const IdType N, const int64_t dim) {
@@ -88,8 +135,6 @@ void SDDMMSPMMCsrSigmoid(const IdType *indptr, const IdType *indices, const IdTy
 DType *sm_table;
 sm_table = static_cast<DType *> (::operator new (sizeof(DType[SM_TABLE_SIZE])));
 init_SM_TABLE<IdType, DType>(sm_table);
-
-//for(IdType i = 0; i < SM_TABLE_SIZE; i++) cout << sm_table[i] << " "; cout << endl;
 
 #pragma omp parallel for
 for (IdType rid = 0; rid < N; ++rid){
@@ -124,19 +169,35 @@ const IdType* indices = csr.indices.Ptr<IdType>();
 const IdType* edges = csr.data.Ptr<IdType>();
 const DType* X = lhs.Ptr<DType>();
 const DType* Y = rhs.Ptr<DType>();
-const int64_t dim = bcast.out_len;
+const int32_t dim = bcast.out_len;
 // lhs_dim = bcast.lhs_len, rhs_dim = bcast.rhs_len, reduce_size = bcast.reduce_size;
 
 DType* O = out.Ptr<DType>();
-//if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-//else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
-//#define DREAL
-//cout << "Sizeof:" << sizeof(IdType) << "," << sizeof(DType) << endl;
-//cout << "Rows:" << csr.num_rows << ", Dim:" << dim << ", indptr:"<< indptr[0] << ",indices:" << indices[0] << endl;
+/*
+if(ftype == 1) SDDMMSPMMCsrSigmoid<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+else SDDMMSPMMCsrTdist<IdType, DType>(indptr, indices, edges, X, Y, O, csr.num_rows, dim);
+#define DREAL
+cout << "Sizeof:" << sizeof(IdType) << "," << sizeof(DType) << endl;
+cout << "Rows:" << csr.num_rows << ", Dim:" << dim << ", indptr:"<< indptr[0] << ",indices:" << indices[0] << endl;
+*/
+//uinit_SM_TABLE();
+if(ftype == 1){
+   uinit_SM_TABLE();
+   int32_t imsg;
+   imsg = VOP_COPY_RHS | ROP_DOT | SOP_UDEF | VSC_MUL | AOP_ADD;
+   fusedMM_csr(imsg, csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, NULL, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
+}else{
+   int32_t imsg;
+   imsg = VOP_SUB | ROP_UDEF | SOP_UDEF | VSC_MUL | AOP_ADD;
+   fusedMM_csr(imsg, csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, NULL, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
+}
+
+/*
 if(ftype == 1)
-sgsddmm_csr('s', csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
+sgsddmm_csr('s', csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, NULL, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
 else
-sgsddmm_csr('t', csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
+sgsddmm_csr('t', csr.num_rows, csr.num_rows, dim, 1.0, 0.0, csr.num_rows, csr.num_rows, NULL, (const long int*)indices, (const long int*)indptr, (const long int*)indptr+1, (const float*)X, dim, (const float*)Y, dim, 1.0, (float*)O, dim);
+*/
 }	
 }
 }
